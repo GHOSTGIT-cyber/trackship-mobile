@@ -2,18 +2,33 @@ import React from 'react';
 import { Circle } from 'react-native-maps';
 
 interface ZoneCircleProps {
-  latitude: number;
-  longitude: number;
+  center: {
+    latitude: number;
+    longitude: number;
+  };
   radius: number;
   color: string;
+  strokeWidth?: number;
+  fillOpacity?: number;
 }
 
-export const ZoneCircle: React.FC<ZoneCircleProps> = ({
-  latitude,
-  longitude,
+const ZoneCircleComponent: React.FC<ZoneCircleProps> = ({
+  center,
   radius,
-  color
+  color,
+  strokeWidth = 2,
+  fillOpacity = 0.15
 }) => {
-  // TODO: Implémenter le composant Circle
-  return null;
+  return (
+    <Circle
+      center={center}
+      radius={radius}
+      fillColor={`${color}${Math.round(fillOpacity * 255).toString(16).padStart(2, '0')}`}
+      strokeColor={color}
+      strokeWidth={strokeWidth}
+    />
+  );
 };
+
+// Export avec React.memo pour optimisation
+export const ZoneCircle = React.memo(ZoneCircleComponent);
