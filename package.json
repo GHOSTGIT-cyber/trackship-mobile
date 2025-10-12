@@ -9,10 +9,13 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "axios": "^1.6.0",
     "expo": "~54.0.13",
+    "expo-location": "~18.0.6",
     "expo-status-bar": "~3.0.8",
     "react": "19.1.0",
-    "react-native": "0.81.4"
+    "react-native": "0.81.4",
+    "react-native-maps": "1.18.0"
   },
   "devDependencies": {
     "@types/react": "~19.1.0",
