@@ -33,24 +33,42 @@ const ShipMarkerComponent: React.FC<ShipMarkerProps> = ({
   // Rendu de l'icône selon l'état
   const renderIcon = () => {
     if (moving && ship.course !== undefined) {
-      // Flèche orientée selon le cap (navire en mouvement)
+      // Bateau speedboat avec flèche directionnelle (navire en mouvement)
       return (
         <View
           style={[
-            styles.arrowContainer,
+            styles.shipContainer,
             { transform: [{ rotate: `${ship.course}deg` }] }
           ]}
         >
-          <View
-            style={[
-              styles.arrow,
-              { borderBottomColor: zoneColor }
-            ]}
-          />
+          {/* Corps du bateau (speedboat shape) */}
+          <View style={styles.shipBody}>
+            {/* Pointe avant */}
+            <View
+              style={[
+                styles.shipNose,
+                { borderBottomColor: zoneColor }
+              ]}
+            />
+            {/* Corps principal */}
+            <View
+              style={[
+                styles.shipMain,
+                { backgroundColor: zoneColor }
+              ]}
+            />
+            {/* Flèche directionnelle */}
+            <View
+              style={[
+                styles.directionArrow,
+                { borderBottomColor: zoneColor }
+              ]}
+            />
+          </View>
         </View>
       );
     } else {
-      // Cercle (navire à l'arrêt)
+      // Cercle simple (navire à l'arrêt)
       return (
         <View
           style={[
@@ -98,20 +116,40 @@ const ShipMarkerComponent: React.FC<ShipMarkerProps> = ({
 };
 
 const styles = StyleSheet.create({
-  arrowContainer: {
-    width: 30,
-    height: 30,
+  shipContainer: {
+    width: 40,
+    height: 40,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  arrow: {
+  shipBody: {
+    alignItems: 'center',
+  },
+  shipNose: {
     width: 0,
     height: 0,
-    borderLeftWidth: 10,
-    borderRightWidth: 10,
-    borderBottomWidth: 30,
+    borderLeftWidth: 8,
+    borderRightWidth: 8,
+    borderBottomWidth: 12,
     borderLeftColor: 'transparent',
     borderRightColor: 'transparent',
+    marginBottom: -2,
+  },
+  shipMain: {
+    width: 16,
+    height: 20,
+    borderRadius: 3,
+  },
+  directionArrow: {
+    width: 0,
+    height: 0,
+    borderLeftWidth: 6,
+    borderRightWidth: 6,
+    borderBottomWidth: 10,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    marginTop: 2,
+    opacity: 0.8,
   },
   circle: {
     width: 24,

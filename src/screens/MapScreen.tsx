@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, AppState } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, AppState, Image } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { Audio } from 'expo-av';
 import { Ship } from '../types/ship';
@@ -31,15 +31,23 @@ const MapScreen: React.FC = () => {
       // Vérifier que l'app est au premier plan
       if (AppState.currentState !== 'active') return;
 
+      // Utiliser le son de notification système d'Expo
+      await Audio.setAudioModeAsync({
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: false,
+      });
+
       const { sound } = await Audio.Sound.createAsync(
-        { uri: 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBy/LMeS0FJHbE7+GKQQ0RU6vn77FgHg4' },
-        { shouldPlay: false }
+        // Utiliser require avec un fichier audio local si disponible
+        // Sinon utiliser une URL de notification
+        { uri: 'https://notificationsounds.com/storage/sounds/file-sounds-1150-pristine.mp3' },
+        { shouldPlay: true, volume: 0.5 }
       );
 
-      await sound.playAsync();
+      // Nettoyer après 2 secondes
       setTimeout(() => {
-        sound.unloadAsync();
-      }, 1000);
+        sound.unloadAsync().catch(() => {});
+      }, 2000);
     } catch (error) {
       console.error('[MapScreen] Erreur lecture son:', error);
     }
@@ -139,28 +147,45 @@ const MapScreen: React.FC = () => {
     };
   }, [autoRefresh]);
 
-  // Filtrer les navires selon le filtre actif
-  const filteredShips = ships.filter(ship => {
-    if (filter === 'all') return true;
-    if (filter === 'moving') return ship.speed > 0.5;
-    if (filter === 'stopped') return ship.speed <= 0.5;
-    return true;
+  // Filtrer les navires : d'abord par distance (< 3km), puis par filtre utilisateur
+  const filteredShips = ships
+    .filter(ship => {
+      // Filtrer TOUS les navires au-delà de 3km
+      const dist = calculateDistance(
+        BASE_COORDS.latitude,
+        BASE_COORDS.longitude,
+        ship.latitude,
+        ship.longitude
+      );
+      return dist < ZONES.APPROACH; // Seulement navires < 3km
+    })
+    .filter(ship => {
+      // Ensuite appliquer le filtre utilisateur
+      if (filter === 'all') return true;
+      if (filter === 'moving') return ship.speed > 0.5;
+      if (filter === 'stopped') return ship.speed <= 0.5;
+      return true;
+    });
+
+  // Calculer les statistiques (seulement navires < 3km)
+  const shipsIn3kmZone = ships.filter(s => {
+    const dist = calculateDistance(BASE_COORDS.latitude, BASE_COORDS.longitude, s.latitude, s.longitude);
+    return dist < ZONES.APPROACH;
   });
 
-  // Calculer les statistiques
   const stats = {
-    total: ships.length,
-    moving: ships.filter(s => s.speed > 0.5).length,
-    stopped: ships.filter(s => s.speed <= 0.5).length,
-    redZone: ships.filter(s => {
+    total: shipsIn3kmZone.length,
+    moving: shipsIn3kmZone.filter(s => s.speed > 0.5).length,
+    stopped: shipsIn3kmZone.filter(s => s.speed <= 0.5).length,
+    redZone: shipsIn3kmZone.filter(s => {
       const dist = calculateDistance(BASE_COORDS.latitude, BASE_COORDS.longitude, s.latitude, s.longitude);
       return dist < ZONES.ALERT;
     }).length,
-    orangeZone: ships.filter(s => {
+    orangeZone: shipsIn3kmZone.filter(s => {
       const dist = calculateDistance(BASE_COORDS.latitude, BASE_COORDS.longitude, s.latitude, s.longitude);
       return dist >= ZONES.ALERT && dist < ZONES.VIGILANCE;
     }).length,
-    greenZone: ships.filter(s => {
+    greenZone: shipsIn3kmZone.filter(s => {
       const dist = calculateDistance(BASE_COORDS.latitude, BASE_COORDS.longitude, s.latitude, s.longitude);
       return dist >= ZONES.VIGILANCE && dist < ZONES.APPROACH;
     }).length,
@@ -189,13 +214,18 @@ const MapScreen: React.FC = () => {
         showsUserLocation={false}
         showsMyLocationButton={false}
       >
-        {/* Marqueur de la base */}
+        {/* Marqueur de la base avec logo */}
         <Marker
           coordinate={BASE_COORDS}
           title="Base"
           description="Point de surveillance"
+          anchor={{ x: 0.5, y: 0.5 }}
         >
-          <Text style={styles.baseMarker}>🏭</Text>
+          <Image
+            source={require('../../assets/logo.png')}
+            style={styles.baseLogo}
+            resizeMode="contain"
+          />
         </Marker>
 
         {/* Cercles de zones */}
@@ -312,8 +342,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
   },
-  baseMarker: {
-    fontSize: 32,
+  baseLogo: {
+    width: 50,
+    height: 50,
   },
   refreshCounter: {
     position: 'absolute',
