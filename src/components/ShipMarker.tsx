@@ -74,13 +74,23 @@ const ShipMarkerComponent: React.FC<ShipMarkerProps> = ({
 
       <Callout>
         <View style={styles.calloutContainer}>
-          <Text style={styles.calloutTitle}>{ship.name}</Text>
+          <View style={styles.calloutHeader}>
+            <Text style={styles.calloutTitle}>{ship.name}</Text>
+            <View style={[styles.zoneBadge, { backgroundColor: zoneColor }]}>
+              <Text style={styles.zoneBadgeText}>
+                {zoneColor === 'red' ? 'ALERTE' : zoneColor === 'orange' ? 'VIGILANCE' : 'APPROCHE'}
+              </Text>
+            </View>
+          </View>
+          <View style={styles.calloutRow}>
+            <Text style={styles.calloutIcon}>{moving ? '🔄' : '⏸️'}</Text>
+            <Text style={styles.calloutText}>
+              {moving ? 'En mouvement' : 'À l\'arrêt'}
+            </Text>
+          </View>
           <Text style={styles.calloutText}>Vitesse : {ship.speed.toFixed(1)} kn</Text>
           <Text style={styles.calloutText}>Distance : {Math.round(distance)} m</Text>
           <Text style={styles.calloutText}>Longueur : {ship.length} m</Text>
-          <Text style={styles.calloutText}>
-            Statut : {moving ? 'En mouvement' : 'À l\'arrêt'}
-          </Text>
         </View>
       </Callout>
     </Marker>
@@ -110,17 +120,44 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   calloutContainer: {
-    padding: 10,
-    minWidth: 200,
+    padding: 12,
+    minWidth: 220,
+  },
+  calloutHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
   },
   calloutTitle: {
     fontWeight: 'bold',
-    fontSize: 16,
+    fontSize: 17,
+    flex: 1,
+  },
+  zoneBadge: {
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    marginLeft: 8,
+  },
+  zoneBadgeText: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  calloutRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 8,
+  },
+  calloutIcon: {
+    fontSize: 16,
+    marginRight: 6,
   },
   calloutText: {
     fontSize: 14,
     marginBottom: 4,
+    color: '#333',
   },
 });
 
