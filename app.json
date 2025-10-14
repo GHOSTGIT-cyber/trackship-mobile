@@ -11,10 +11,6 @@
       "resizeMode": "contain",
       "backgroundColor": "#2c3e50"
     },
-    "notification": {
-      "icon": "./assets/notification-icon.png",
-      "color": "#3B82F6"
-    },
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -27,16 +23,28 @@
     },
     "android": {
       "package": "fr.bakabi.trackship",
+      "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#2c3e50"
+        "backgroundColor": "#3B82F6"
       },
       "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
         "NOTIFICATIONS"
       ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#3B82F6"
+        }
+      ]
+    ]
   }
 }
