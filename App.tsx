@@ -1,9 +1,40 @@
+import { useEffect, useRef } from 'react';
 import { SafeAreaView, StyleSheet, View, Text } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Notifications from 'expo-notifications';
+import { registerForPushNotificationsAsync } from './src/services/pushNotifications';
 import MapScreen from './src/screens/MapScreen';
 
 export default function App() {
+  const notificationListener = useRef<any>();
+  const responseListener = useRef<any>();
+
+  useEffect(() => {
+    // Enregistrer pour les notifications au démarrage
+    registerForPushNotificationsAsync();
+
+    // Listener : notification reçue (app ouverte)
+    notificationListener.current = Notifications.addNotificationReceivedListener(notification => {
+      console.log('🔔 Notification reçue:', notification);
+    });
+
+    // Listener : user tape sur la notification
+    responseListener.current = Notifications.addNotificationResponseReceivedListener(response => {
+      console.log('👆 Notification tapée:', response);
+      // TODO : naviguer vers MapScreen (déjà affiché par défaut)
+    });
+
+    return () => {
+      if (notificationListener.current) {
+        Notifications.removeNotificationSubscription(notificationListener.current);
+      }
+      if (responseListener.current) {
+        Notifications.removeNotificationSubscription(responseListener.current);
+      }
+    };
+  }, []);
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
