@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Marker, Callout } from 'react-native-maps';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Ship } from '../types/ship';
-import { calculateDistance, getZoneColor, isMoving } from '../utils/distance';
+import { calculateDistance, isMoving } from '../utils/distance';
 
 interface ShipMarkerProps {
   ship: Ship;
@@ -25,16 +25,21 @@ const ShipMarkerComponent: React.FC<ShipMarkerProps> = ({
     ship.longitude
   );
 
-  // Déterminer la couleur selon la zone
-  const zoneColor = getZoneColor(distance);
+  // Helper pour couleur selon distance (hex codes)
+  const getColorByDistance = (dist: number): string => {
+    if (dist < 1000) return '#EF4444';  // Rouge - Zone 1km
+    if (dist < 2000) return '#F97316';  // Orange - Zone 2km
+    if (dist < 3000) return '#10B981';  // Vert - Zone 3km
+    return '#9CA3AF';  // Gris - Au-delà
+  };
 
-  // Vérifier si le navire est en mouvement
-  const moving = isMoving(ship.speed);
+  const color = getColorByDistance(distance);
+  const moving = ship.moving || isMoving(ship.speed);
 
   // Rendu de l'icône selon l'état
   const renderIcon = () => {
     if (moving && ship.course !== undefined) {
-      // Icône speedboat orientée selon le cap (navire en mouvement)
+      // NAVIRE EN MOUVEMENT : Icône speedboat orientée selon le cap
       return (
         <View
           style={[
@@ -43,21 +48,22 @@ const ShipMarkerComponent: React.FC<ShipMarkerProps> = ({
           ]}
         >
           <MaterialCommunityIcons
-            name="speedboat"
-            size={32}
-            color={zoneColor}
+            name={"speedboat" as any}
+            size={30}
+            color={color}
           />
         </View>
       );
     } else {
-      // Cercle simple (navire à l'arrêt)
+      // NAVIRE À L'ARRÊT : Carré bleu avec icône pause
       return (
-        <View
-          style={[
-            styles.circle,
-            { backgroundColor: zoneColor }
-          ]}
-        />
+        <View style={styles.stoppedContainer}>
+          <MaterialCommunityIcons
+            name="pause"
+            size={18}
+            color="white"
+          />
+        </View>
       );
     }
   };
@@ -76,9 +82,9 @@ const ShipMarkerComponent: React.FC<ShipMarkerProps> = ({
         <View style={styles.calloutContainer}>
           <View style={styles.calloutHeader}>
             <Text style={styles.calloutTitle}>{ship.name}</Text>
-            <View style={[styles.zoneBadge, { backgroundColor: zoneColor }]}>
+            <View style={[styles.zoneBadge, { backgroundColor: color }]}>
               <Text style={styles.zoneBadgeText}>
-                {zoneColor === 'red' ? 'ALERTE' : zoneColor === 'orange' ? 'VIGILANCE' : 'APPROCHE'}
+                {color === '#EF4444' ? 'ALERTE' : color === '#F97316' ? 'VIGILANCE' : 'APPROCHE'}
               </Text>
             </View>
           </View>
@@ -104,11 +110,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  circle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    opacity: 0.7,
+  stoppedContainer: {
+    width: 26,
+    height: 26,
+    backgroundColor: '#3B82F6',
+    borderRadius: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'white',
   },
   calloutContainer: {
     padding: 12,

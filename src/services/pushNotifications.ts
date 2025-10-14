@@ -1,6 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
-import { API_CONFIG } from '../config/api';
+import { Platform } from 'react-native';
+import { API_CONFIG } from '../constants/config';
 
 // Configurer le handler de notifications
 Notifications.setNotificationHandler({
@@ -8,6 +9,8 @@ Notifications.setNotificationHandler({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
   }),
 });
 
@@ -37,17 +40,32 @@ export async function registerForPushNotificationsAsync(): Promise<string | unde
   }
 
   token = (await Notifications.getExpoPushTokenAsync()).data;
+  console.log('📱 Expo Push Token:', token);
 
   // Envoyer token au backend
   try {
-    await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.REGISTER_TOKEN}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token })
-    });
-    console.log('✅ Token enregistré:', token);
+    const response = await fetch(
+      `${API_CONFIG.PUSH_API_URL}${API_CONFIG.ENDPOINTS.REGISTER_TOKEN}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token })
+      }
+    );
+
+    const data = await response.json();
+    console.log('✅ Token enregistré:', data);
   } catch (error) {
     console.error('❌ Erreur enregistrement token:', error);
+  }
+
+  if (Platform.OS === 'android') {
+    Notifications.setNotificationChannelAsync('default', {
+      name: 'default',
+      importance: Notifications.AndroidImportance.MAX,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: '#3B82F6',
+    });
   }
 
   return token;
@@ -59,11 +77,14 @@ export async function registerForPushNotificationsAsync(): Promise<string | unde
  */
 export async function unregisterPushToken(token: string): Promise<void> {
   try {
-    await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.UNREGISTER_TOKEN}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token })
-    });
+    await fetch(
+      `${API_CONFIG.PUSH_API_URL}${API_CONFIG.ENDPOINTS.UNREGISTER_TOKEN}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token })
+      }
+    );
     console.log('✅ Token désinscrit');
   } catch (error) {
     console.error('❌ Erreur désinscription:', error);

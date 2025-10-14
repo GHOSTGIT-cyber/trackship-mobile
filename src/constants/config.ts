@@ -1,16 +1,29 @@
 export const BASE_COORDS = {
-  latitude: 48.853229,
-  longitude: 2.225328
+  lat: 48.853229,
+  lon: 2.225328,
 };
 
-// Backend Railway - endpoint pour récupérer les navires (EuRIS proxy)
-export const API_URL = 'https://trackship-backend-production.up.railway.app/api/euris-proxy';
-// TODO : Changer pour https://api.bakabi.fr/api/euris-proxy quand DNS propagé
-
 export const ZONES = {
-  ALERT: 1000,      // 1km en mètres
-  VIGILANCE: 2000,  // 2km
-  APPROACH: 3000    // 3km
+  zone1: 1000,  // 1 km
+  zone2: 2000,  // 2 km
+  zone3: 3000,  // 3 km
+};
+
+export const API_CONFIG = {
+  // Backend PHP Hostinger : Proxy EuRIS pour récupérer les navires
+  EURIS_API_URL: 'https://bakabi.fr/trackship/api/euris-proxy.php',
+
+  // Backend Node.js Railway : Gestion notifications push
+  PUSH_API_URL: __DEV__
+    ? 'http://localhost:3000'  // Dev local (si tu lances server.js en local)
+    : 'https://api.bakabi.fr',  // Production Railway
+
+  ENDPOINTS: {
+    // Routes backend notifications (Railway)
+    REGISTER_TOKEN: '/register-token',
+    UNREGISTER_TOKEN: '/unregister-token',
+    HEALTH: '/health',
+  }
 };
 
 export const REFRESH_INTERVAL = 10000; // 10 secondes en ms

@@ -2,12 +2,17 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, AppState, Image } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { Audio } from 'expo-av';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Ship } from '../types/ship';
 import { ZoneCircle } from '../components/ZoneCircle';
 import { ShipMarker } from '../components/ShipMarker';
+import NotificationPanel from '../components/NotificationPanel';
 import { fetchShips } from '../services/api';
 import { calculateDistance } from '../utils/distance';
 import { BASE_COORDS, ZONES, REFRESH_INTERVAL } from '../constants/config';
+
+const NOTIFICATIONS_ENABLED_KEY = '@notifications_enabled';
 
 const MapScreen: React.FC = () => {
   // State
@@ -17,6 +22,8 @@ const MapScreen: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [autoRefresh, setAutoRefresh] = useState<boolean>(true);
   const [filter, setFilter] = useState<'all' | 'moving' | 'stopped'>('all');
+  const [notificationPanelVisible, setNotificationPanelVisible] = useState<boolean>(false);
+  const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(true);
 
   // Refs pour les intervals
   const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -25,8 +32,36 @@ const MapScreen: React.FC = () => {
   // Ref pour tracker les navires déjà signalés en zone rouge
   const redZoneAlertedShips = useRef<Set<string>>(new Set());
 
+  // Charger les préférences de notification depuis AsyncStorage au mount
+  useEffect(() => {
+    loadNotificationPreference();
+  }, []);
+
+  const loadNotificationPreference = async () => {
+    try {
+      const value = await AsyncStorage.getItem(NOTIFICATIONS_ENABLED_KEY);
+      if (value !== null) {
+        setNotificationsEnabled(value === 'true');
+      }
+    } catch (error) {
+      console.error('[MapScreen] Erreur chargement préférence notifications:', error);
+    }
+  };
+
+  const handleToggleNotifications = async (enabled: boolean) => {
+    try {
+      await AsyncStorage.setItem(NOTIFICATIONS_ENABLED_KEY, enabled.toString());
+      setNotificationsEnabled(enabled);
+      console.log(`[MapScreen] Notifications ${enabled ? 'activées' : 'désactivées'}`);
+    } catch (error) {
+      console.error('[MapScreen] Erreur sauvegarde préférence notifications:', error);
+    }
+  };
+
   // Fonction pour jouer le son d'alerte
   const playAlertSound = async () => {
+    // Ne jouer le son que si les notifications sont activées
+    if (!notificationsEnabled) return;
     try {
       // Vérifier que l'app est au premier plan
       if (AppState.currentState !== 'active') return;
@@ -65,13 +100,13 @@ const MapScreen: React.FC = () => {
       // Vérifier les navires en zone rouge et jouer son si nouveau navire
       data.forEach(ship => {
         const dist = calculateDistance(
-          BASE_COORDS.latitude,
-          BASE_COORDS.longitude,
+          BASE_COORDS.lat,
+          BASE_COORDS.lon,
           ship.latitude,
           ship.longitude
         );
 
-        if (dist < ZONES.ALERT) {
+        if (dist < ZONES.zone1) {
           // Navire en zone rouge
           if (!redZoneAlertedShips.current.has(ship.trackId)) {
             // Nouveau navire en zone rouge, jouer le son
@@ -152,12 +187,12 @@ const MapScreen: React.FC = () => {
     .filter(ship => {
       // Filtrer TOUS les navires au-delà de 3km
       const dist = calculateDistance(
-        BASE_COORDS.latitude,
-        BASE_COORDS.longitude,
+        BASE_COORDS.lat,
+        BASE_COORDS.lon,
         ship.latitude,
         ship.longitude
       );
-      return dist < ZONES.APPROACH; // Seulement navires < 3km
+      return dist < ZONES.zone3; // Seulement navires < 3km
     })
     .filter(ship => {
       // Ensuite appliquer le filtre utilisateur
@@ -169,8 +204,8 @@ const MapScreen: React.FC = () => {
 
   // Calculer les statistiques (seulement navires < 3km)
   const shipsIn3kmZone = ships.filter(s => {
-    const dist = calculateDistance(BASE_COORDS.latitude, BASE_COORDS.longitude, s.latitude, s.longitude);
-    return dist < ZONES.APPROACH;
+    const dist = calculateDistance(BASE_COORDS.lat, BASE_COORDS.lon, s.latitude, s.longitude);
+    return dist < ZONES.zone3;
   });
 
   const stats = {
@@ -178,16 +213,16 @@ const MapScreen: React.FC = () => {
     moving: shipsIn3kmZone.filter(s => s.speed > 0.5).length,
     stopped: shipsIn3kmZone.filter(s => s.speed <= 0.5).length,
     redZone: shipsIn3kmZone.filter(s => {
-      const dist = calculateDistance(BASE_COORDS.latitude, BASE_COORDS.longitude, s.latitude, s.longitude);
-      return dist < ZONES.ALERT;
+      const dist = calculateDistance(BASE_COORDS.lat, BASE_COORDS.lon, s.latitude, s.longitude);
+      return dist < ZONES.zone1;
     }).length,
     orangeZone: shipsIn3kmZone.filter(s => {
-      const dist = calculateDistance(BASE_COORDS.latitude, BASE_COORDS.longitude, s.latitude, s.longitude);
-      return dist >= ZONES.ALERT && dist < ZONES.VIGILANCE;
+      const dist = calculateDistance(BASE_COORDS.lat, BASE_COORDS.lon, s.latitude, s.longitude);
+      return dist >= ZONES.zone1 && dist < ZONES.zone2;
     }).length,
     greenZone: shipsIn3kmZone.filter(s => {
-      const dist = calculateDistance(BASE_COORDS.latitude, BASE_COORDS.longitude, s.latitude, s.longitude);
-      return dist >= ZONES.VIGILANCE && dist < ZONES.APPROACH;
+      const dist = calculateDistance(BASE_COORDS.lat, BASE_COORDS.lon, s.latitude, s.longitude);
+      return dist >= ZONES.zone2 && dist < ZONES.zone3;
     }).length,
   };
 
@@ -206,8 +241,8 @@ const MapScreen: React.FC = () => {
       <MapView
         style={styles.map}
         initialRegion={{
-          latitude: BASE_COORDS.latitude,
-          longitude: BASE_COORDS.longitude,
+          latitude: BASE_COORDS.lat,
+          longitude: BASE_COORDS.lon,
           latitudeDelta: 0.05,
           longitudeDelta: 0.05,
         }}
@@ -216,7 +251,7 @@ const MapScreen: React.FC = () => {
       >
         {/* Marqueur de la base avec logo */}
         <Marker
-          coordinate={BASE_COORDS}
+          coordinate={{ latitude: BASE_COORDS.lat, longitude: BASE_COORDS.lon }}
           title="Base"
           description="Point de surveillance"
           anchor={{ x: 0.5, y: 0.5 }}
@@ -230,18 +265,18 @@ const MapScreen: React.FC = () => {
 
         {/* Cercles de zones */}
         <ZoneCircle
-          center={BASE_COORDS}
-          radius={ZONES.ALERT}
+          center={{ latitude: BASE_COORDS.lat, longitude: BASE_COORDS.lon }}
+          radius={ZONES.zone1}
           color="red"
         />
         <ZoneCircle
-          center={BASE_COORDS}
-          radius={ZONES.VIGILANCE}
+          center={{ latitude: BASE_COORDS.lat, longitude: BASE_COORDS.lon }}
+          radius={ZONES.zone2}
           color="orange"
         />
         <ZoneCircle
-          center={BASE_COORDS}
-          radius={ZONES.APPROACH}
+          center={{ latitude: BASE_COORDS.lat, longitude: BASE_COORDS.lon }}
+          radius={ZONES.zone3}
           color="green"
         />
 
@@ -250,7 +285,7 @@ const MapScreen: React.FC = () => {
           <ShipMarker
             key={ship.trackId}
             ship={ship}
-            baseCoords={BASE_COORDS}
+            baseCoords={{ latitude: BASE_COORDS.lat, longitude: BASE_COORDS.lon }}
           />
         ))}
       </MapView>
@@ -298,6 +333,18 @@ const MapScreen: React.FC = () => {
         <Text style={styles.toggleIcon}>{autoRefresh ? '⏸️' : '▶️'}</Text>
       </TouchableOpacity>
 
+      {/* Bouton cloche pour ouvrir le panneau notifications */}
+      <TouchableOpacity
+        style={styles.bellButton}
+        onPress={() => setNotificationPanelVisible(true)}
+      >
+        <MaterialCommunityIcons
+          name={notificationsEnabled ? "bell" : "bell-off"}
+          size={24}
+          color="white"
+        />
+      </TouchableOpacity>
+
       {/* Panneau statistiques */}
       <View style={styles.statsPanel}>
         <View style={styles.statsRow}>
@@ -320,6 +367,14 @@ const MapScreen: React.FC = () => {
           <Text style={styles.errorText}>⚠️ {error}</Text>
         </View>
       )}
+
+      {/* Panneau de notifications */}
+      <NotificationPanel
+        visible={notificationPanelVisible}
+        onClose={() => setNotificationPanelVisible(false)}
+        notificationsEnabled={notificationsEnabled}
+        onToggleNotifications={handleToggleNotifications}
+      />
     </View>
   );
 };
@@ -349,7 +404,7 @@ const styles = StyleSheet.create({
   refreshCounter: {
     position: 'absolute',
     top: 76,
-    right: 70,
+    right: 128,
     backgroundColor: 'rgba(0,0,0,0.7)',
     padding: 12,
     borderRadius: 8,
@@ -368,6 +423,18 @@ const styles = StyleSheet.create({
   },
   toggleIcon: {
     fontSize: 24,
+  },
+  bellButton: {
+    position: 'absolute',
+    top: 76,
+    right: 72,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    padding: 12,
+    borderRadius: 8,
+    width: 48,
+    height: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   filterContainer: {
     position: 'absolute',

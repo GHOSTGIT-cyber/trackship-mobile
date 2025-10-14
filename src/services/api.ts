@@ -1,9 +1,9 @@
 import axios from 'axios';
-import { API_URL, BASE_COORDS } from '../constants/config';
+import { API_CONFIG, BASE_COORDS } from '../constants/config';
 import { ApiResponse, Ship } from '../types/ship';
 
 /**
- * Récupère la liste des navires depuis l'API
+ * Récupère la liste des navires depuis l'API EuRIS (backend PHP)
  * @returns Liste des navires
  * @throws Error en cas d'erreur réseau ou serveur
  */
@@ -12,19 +12,19 @@ export async function fetchShips(): Promise<Ship[]> {
     // Calcul bbox autour de la base (rayon 5km)
     const radiusInKm = 5;
     const latDelta = radiusInKm / 111; // ~0.045
-    const lonDelta = radiusInKm / (111 * Math.cos(BASE_COORDS.latitude * Math.PI / 180)); // ~0.065
+    const lonDelta = radiusInKm / (111 * Math.cos(BASE_COORDS.lat * Math.PI / 180)); // ~0.065
 
     const params = {
-      minLat: (BASE_COORDS.latitude - latDelta).toFixed(6),
-      maxLat: (BASE_COORDS.latitude + latDelta).toFixed(6),
-      minLon: (BASE_COORDS.longitude - lonDelta).toFixed(6),
-      maxLon: (BASE_COORDS.longitude + lonDelta).toFixed(6),
+      minLat: (BASE_COORDS.lat - latDelta).toFixed(6),
+      maxLat: (BASE_COORDS.lat + latDelta).toFixed(6),
+      minLon: (BASE_COORDS.lon - lonDelta).toFixed(6),
+      maxLon: (BASE_COORDS.lon + lonDelta).toFixed(6),
       pageSize: 100
     };
 
-    console.log('[API] Appel avec params:', params);
+    console.log('[API] Appel EuRIS avec params:', params);
 
-    const response = await axios.get<ApiResponse>(API_URL, {
+    const response = await axios.get<ApiResponse>(API_CONFIG.EURIS_API_URL, {
       params: params,
       timeout: 15000,
       headers: {
