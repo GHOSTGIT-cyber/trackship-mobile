@@ -3,7 +3,9 @@ export const BASE_COORDS = {
   longitude: 2.225328
 };
 
-export const API_URL = 'https://bakabi.fr/trackship/api/euris-proxy.php';
+// Backend Railway - endpoint pour récupérer les navires (EuRIS proxy)
+export const API_URL = 'https://trackship-backend-production.up.railway.app/api/euris-proxy';
+// TODO : Changer pour https://api.bakabi.fr/api/euris-proxy quand DNS propagé
 
 export const ZONES = {
   ALERT: 1000,      // 1km en mètres
