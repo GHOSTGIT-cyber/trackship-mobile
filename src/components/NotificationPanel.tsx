@@ -1,6 +1,10 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, StyleSheet, Animated, TouchableOpacity, Switch } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Notifications from 'expo-notifications';
+
+const EXPO_PUSH_TOKEN_KEY = '@expo_push_token';
 
 interface NotificationPanelProps {
   visible: boolean;
@@ -17,6 +21,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
 }) => {
   // Animation pour le slide depuis la droite
   const slideAnim = useRef(new Animated.Value(300)).current; // Commence hors écran (300px à droite)
+  const [currentToken, setCurrentToken] = useState<string | null>(null);
 
   useEffect(() => {
     if (visible) {
@@ -27,6 +32,9 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
         tension: 65,
         friction: 10,
       }).start();
+
+      // Charger le token
+      loadToken();
     } else {
       // Slide out : de gauche vers droite
       Animated.timing(slideAnim, {
@@ -36,6 +44,34 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
       }).start();
     }
   }, [visible]);
+
+  const loadToken = async () => {
+    try {
+      const savedToken = await AsyncStorage.getItem(EXPO_PUSH_TOKEN_KEY);
+      setCurrentToken(savedToken);
+      console.log('Token chargé du stockage:', savedToken ? savedToken.substring(0, 30) + '...' : 'Aucun');
+    } catch (error) {
+      console.error('Erreur chargement token:', error);
+    }
+  };
+
+  const testNotification = async () => {
+    try {
+      console.log('🧪 Test notification locale');
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: "🧪 Test notification",
+          body: "Si tu vois ça, les notifications fonctionnent !",
+          sound: true,
+        },
+        trigger: null, // Immédiat
+      });
+      console.log('✅ Notification test envoyée');
+    } catch (error: any) {
+      console.error('Erreur test notif:', error);
+      alert('Erreur test: ' + error.message);
+    }
+  };
 
   if (!visible) return null;
 
@@ -85,6 +121,27 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
               ios_backgroundColor="#D1D5DB"
             />
           </View>
+
+          {/* Afficher token si activé */}
+          {notificationsEnabled && currentToken && (
+            <View style={styles.tokenBox}>
+              <Text style={styles.tokenLabel}>Token Expo Push enregistré :</Text>
+              <Text style={styles.tokenText} numberOfLines={2}>
+                {currentToken}
+              </Text>
+            </View>
+          )}
+
+          {/* Bouton test notification */}
+          {notificationsEnabled && (
+            <TouchableOpacity
+              style={styles.testButton}
+              onPress={testNotification}
+            >
+              <MaterialCommunityIcons name="test-tube" size={20} color="white" />
+              <Text style={styles.testButtonText}>Test notification locale</Text>
+            </TouchableOpacity>
+          )}
 
           {/* Info supplémentaire */}
           <View style={styles.infoBox}>
@@ -171,6 +228,41 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#6B7280',
     lineHeight: 18,
+  },
+  tokenBox: {
+    backgroundColor: '#F3F4F6',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 15,
+    marginBottom: 5,
+  },
+  tokenLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#6B7280',
+    marginBottom: 6,
+  },
+  tokenText: {
+    fontSize: 10,
+    fontFamily: 'monospace',
+    color: '#1F2937',
+    lineHeight: 14,
+  },
+  testButton: {
+    flexDirection: 'row',
+    backgroundColor: '#3B82F6',
+    padding: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 15,
+    marginBottom: 5,
+  },
+  testButtonText: {
+    color: 'white',
+    fontWeight: '600',
+    fontSize: 15,
+    marginLeft: 8,
   },
   infoBox: {
     flexDirection: 'row',

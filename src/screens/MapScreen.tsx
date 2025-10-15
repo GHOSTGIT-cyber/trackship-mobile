@@ -11,6 +11,7 @@ import NotificationPanel from '../components/NotificationPanel';
 import { fetchShips } from '../services/api';
 import { calculateDistance } from '../utils/distance';
 import { BASE_COORDS, ZONES, REFRESH_INTERVAL } from '../constants/config';
+import { registerForPushNotificationsAsync } from '../services/pushNotifications';
 
 const NOTIFICATIONS_ENABLED_KEY = '@notifications_enabled';
 
@@ -50,11 +51,30 @@ const MapScreen: React.FC = () => {
 
   const handleToggleNotifications = async (enabled: boolean) => {
     try {
-      await AsyncStorage.setItem(NOTIFICATIONS_ENABLED_KEY, enabled.toString());
-      setNotificationsEnabled(enabled);
-      console.log(`[MapScreen] Notifications ${enabled ? 'activées' : 'désactivées'}`);
+      if (enabled) {
+        // L'utilisateur active les notifications - enregistrer le token
+        console.log('[MapScreen] Activation notifications - enregistrement token...');
+        const token = await registerForPushNotificationsAsync();
+
+        if (token) {
+          // Token enregistré avec succès
+          await AsyncStorage.setItem(NOTIFICATIONS_ENABLED_KEY, 'true');
+          setNotificationsEnabled(true);
+          console.log(`[MapScreen] ✅ Notifications activées avec token: ${token.substring(0, 30)}...`);
+        } else {
+          // Échec récupération token
+          console.warn('[MapScreen] ⚠️ Impossible d\'enregistrer le token - notifications désactivées');
+          await AsyncStorage.setItem(NOTIFICATIONS_ENABLED_KEY, 'false');
+          setNotificationsEnabled(false);
+        }
+      } else {
+        // L'utilisateur désactive les notifications
+        await AsyncStorage.setItem(NOTIFICATIONS_ENABLED_KEY, 'false');
+        setNotificationsEnabled(false);
+        console.log('[MapScreen] Notifications désactivées');
+      }
     } catch (error) {
-      console.error('[MapScreen] Erreur sauvegarde préférence notifications:', error);
+      console.error('[MapScreen] Erreur toggle notifications:', error);
     }
   };
 
