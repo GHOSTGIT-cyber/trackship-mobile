@@ -18,7 +18,9 @@
       "bundleIdentifier": "fr.bakabi.trackship",
       "supportsTablet": true,
       "infoPlist": {
-        "UIBackgroundModes": ["remote-notification"]
+        "UIBackgroundModes": [
+          "remote-notification"
+        ]
       }
     },
     "android": {
@@ -45,6 +47,11 @@
           "color": "#3B82F6"
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "e3d0f5e2-d59b-4f08-810a-306d14f6783d"
+      }
+    }
   }
 }
