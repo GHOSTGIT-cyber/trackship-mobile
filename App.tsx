@@ -11,8 +11,10 @@ export default function App() {
   const responseListener = useRef<Notifications.Subscription | undefined>(undefined);
 
   useEffect(() => {
-    // Enregistrer pour les notifications au démarrage
-    registerForPushNotificationsAsync();
+    // DÉSACTIVÉ : Enregistrement token push désactivé au démarrage
+    // Évite les crashes si le backend n'est pas disponible
+    // L'utilisateur doit activer manuellement via le panneau notifications (bouton cloche)
+    // registerForPushNotificationsAsync();
 
     // Listener : notification reçue (app ouverte)
     notificationListener.current = Notifications.addNotificationReceivedListener(notification => {

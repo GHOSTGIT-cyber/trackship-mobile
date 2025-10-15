@@ -39,7 +39,7 @@ const ShipMarkerComponent: React.FC<ShipMarkerProps> = ({
   // Rendu de l'icône selon l'état
   const renderIcon = () => {
     if (moving && ship.course !== undefined) {
-      // NAVIRE EN MOUVEMENT : Icône speedboat orientée selon le cap
+      // NAVIRE EN MOUVEMENT : Icône ferry orientée selon le cap
       return (
         <View
           style={[
@@ -48,7 +48,7 @@ const ShipMarkerComponent: React.FC<ShipMarkerProps> = ({
           ]}
         >
           <MaterialCommunityIcons
-            name={"speedboat" as any}
+            name="ferry"
             size={30}
             color={color}
           />
