@@ -14,9 +14,8 @@ export const API_CONFIG = {
   EURIS_API_URL: 'https://bakabi.fr/trackship/api/euris-proxy.php',
 
   // Backend Node.js Railway : Gestion notifications push
-  PUSH_API_URL: __DEV__
-    ? 'http://localhost:3000'  // Dev local (si tu lances server.js en local)
-    : 'https://api.bakabi.fr',  // Production Railway
+  // ⚠️ IMPORTANT: Même en DEV, utiliser Railway car on teste sur device réel
+  PUSH_API_URL: 'https://api.bakabi.fr',  // Railway (dev ET prod)
 
   ENDPOINTS: {
     // Routes backend notifications (Railway)

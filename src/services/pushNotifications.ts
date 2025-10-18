@@ -90,50 +90,97 @@ export async function registerForPushNotificationsAsync(): Promise<string | unde
       return undefined;
     }
 
-    // Envoyer token au backend
-    console.log('\n📡 Envoi token au backend...');
-    console.log(`   URL: ${API_CONFIG.PUSH_API_URL}${API_CONFIG.ENDPOINTS.REGISTER_TOKEN}`);
+    // ============================================
+    // ENREGISTREMENT BACKEND AVEC RETRY
+    // ============================================
+    console.log('\n📡 Enregistrement backend avec retry...');
+    const url = `${API_CONFIG.PUSH_API_URL}${API_CONFIG.ENDPOINTS.REGISTER_TOKEN}`;
+    console.log(`   URL: ${url}`);
     console.log(`   Token: ${token.substring(0, 40)}...`);
 
-    try {
-      const response = await fetch(
-        `${API_CONFIG.PUSH_API_URL}${API_CONFIG.ENDPOINTS.REGISTER_TOKEN}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token })
+    // Fonction retry avec délais croissants
+    const registerWithRetry = async (maxRetries: number = 3): Promise<any> => {
+      for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+          console.log(`\n🔄 Tentative ${attempt}/${maxRetries}...`);
+
+          // Timeout de 15 secondes (Railway peut être lent au réveil)
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+          const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token }),
+            signal: controller.signal,
+          });
+
+          clearTimeout(timeoutId);
+
+          console.log(`   Status HTTP: ${response.status}`);
+
+          if (response.ok) {
+            const data = await response.json();
+            console.log('✅ SUCCÈS backend:', data);
+
+            Alert.alert(
+              '✅ Notifications activées',
+              'Vous recevrez une alerte quand un navire entre dans la zone rouge (1 km).',
+              [{ text: 'OK' }]
+            );
+
+            return { success: true, data };
+          } else {
+            const errorData = await response.json().catch(() => ({ error: 'Erreur inconnue' }));
+            console.warn(`⚠️ Erreur ${response.status}:`, errorData);
+
+            // Si erreur serveur (500+), retry
+            if (response.status >= 500 && attempt < maxRetries) {
+              const retryDelay = attempt * 3;
+              console.log(`   ⏳ Attente ${retryDelay}s avant retry...`);
+              await new Promise(resolve => setTimeout(resolve, retryDelay * 1000));
+              continue;
+            }
+
+            throw new Error(errorData.error || `Erreur HTTP ${response.status}`);
+          }
+
+        } catch (error: any) {
+          console.error(`❌ Tentative ${attempt} échouée:`, error.message);
+
+          if (error.name === 'AbortError') {
+            console.warn('   ⏱️ Timeout (15s dépassé)');
+          }
+
+          if (attempt < maxRetries) {
+            const delay = attempt * 5; // 5s, 10s, 15s
+            console.log(`   ⏳ Attente ${delay}s avant retry (backend peut être en réveil)...`);
+            await new Promise(resolve => setTimeout(resolve, delay * 1000));
+          } else {
+            // Dernier essai échoué
+            throw error;
+          }
         }
-      );
-
-      console.log(`   Status HTTP: ${response.status}`);
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log('✅ Token enregistré sur le serveur:', data);
-        Alert.alert(
-          '✅ Notifications activées !',
-          `Votre token a été enregistré avec succès.\n\nToken: ${token.substring(0, 30)}...`,
-          [{ text: 'OK' }]
-        );
-        return token;
-      } else {
-        const errorText = await response.text();
-        console.warn('⚠️ Erreur serveur lors de l\'enregistrement:', response.status, errorText);
-        Alert.alert(
-          'Avertissement',
-          `Le serveur a retourné une erreur (${response.status}), mais le token local est valide.\n\nVous recevrez peut-être des notifications quand même.`,
-          [{ text: 'OK' }]
-        );
-        return token;
       }
-    } catch (networkError: any) {
-      console.warn('⚠️ Erreur réseau:', networkError.message);
+
+      throw new Error('Échec après ' + maxRetries + ' tentatives');
+    };
+
+    // Lancer l'enregistrement avec retry
+    try {
+      await registerWithRetry(3);
+      return token;
+    } catch (finalError: any) {
+      console.error('❌ ÉCHEC FINAL après 3 tentatives:', finalError.message);
+
       Alert.alert(
-        'Serveur injoignable',
-        `Impossible de contacter le serveur push.\n\nToken local enregistré : ${token.substring(0, 30)}...\n\nErreur: ${networkError.message}`,
+        '⚠️ Serveur injoignable',
+        `Impossible de contacter le serveur push après 3 tentatives.\n\nToken local enregistré : ${token.substring(0, 20)}...\n\nErreur: ${finalError.message}\n\nVous pouvez réessayer plus tard via le bouton dans le panneau notifications.`,
         [{ text: 'OK' }]
       );
-      // Token récupéré localement, l'app peut continuer
+
+      // Token récupéré localement mais pas enregistré backend
+      // L'user peut réessayer via le bouton "Réessayer" dans le panneau
       return token;
     }
 

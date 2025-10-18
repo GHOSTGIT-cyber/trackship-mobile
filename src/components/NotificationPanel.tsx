@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Animated, TouchableOpacity, Switch } from 'react-native';
+import { View, Text, StyleSheet, Animated, TouchableOpacity, Switch, Alert } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
+import { API_CONFIG } from '../constants/config';
 
 const EXPO_PUSH_TOKEN_KEY = '@expo_push_token';
 
@@ -69,7 +70,72 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
       console.log('✅ Notification test envoyée');
     } catch (error: any) {
       console.error('Erreur test notif:', error);
-      alert('Erreur test: ' + error.message);
+      Alert.alert('Erreur test', error.message);
+    }
+  };
+
+  const retryRegistration = async () => {
+    try {
+      const token = await AsyncStorage.getItem(EXPO_PUSH_TOKEN_KEY);
+      if (!token) {
+        Alert.alert(
+          '⚠️ Aucun token local',
+          'Aucun token local trouvé. Désactivez puis réactivez les notifications pour générer un nouveau token.',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+
+      console.log('🔄 Réessai enregistrement token...');
+      Alert.alert('🔄 Tentative en cours', 'Enregistrement du token sur le serveur...');
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+      const response = await fetch(
+        `${API_CONFIG.PUSH_API_URL}${API_CONFIG.ENDPOINTS.REGISTER_TOKEN}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token }),
+          signal: controller.signal,
+        }
+      );
+
+      clearTimeout(timeoutId);
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('✅ Token enregistré:', data);
+        Alert.alert(
+          '✅ Succès',
+          'Votre token a été enregistré avec succès sur le serveur !',
+          [{ text: 'OK' }]
+        );
+      } else {
+        const error = await response.json().catch(() => ({ error: 'Erreur inconnue' }));
+        console.error('❌ Erreur serveur:', error);
+        Alert.alert(
+          '❌ Erreur serveur',
+          `Le serveur a retourné une erreur (${response.status}):\n\n${error.error}`,
+          [{ text: 'OK' }]
+        );
+      }
+    } catch (error: any) {
+      console.error('❌ Erreur réseau:', error);
+      if (error.name === 'AbortError') {
+        Alert.alert(
+          '⏱️ Timeout',
+          'Le serveur met trop de temps à répondre (>15s). Le backend est peut-être en veille sur Railway.',
+          [{ text: 'OK' }]
+        );
+      } else {
+        Alert.alert(
+          '❌ Erreur réseau',
+          `Impossible de contacter le serveur:\n\n${error.message}`,
+          [{ text: 'OK' }]
+        );
+      }
     }
   };
 
@@ -140,6 +206,17 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
             >
               <MaterialCommunityIcons name="test-tube" size={20} color="white" />
               <Text style={styles.testButtonText}>Test notification locale</Text>
+            </TouchableOpacity>
+          )}
+
+          {/* Bouton réessayer enregistrement */}
+          {notificationsEnabled && currentToken && (
+            <TouchableOpacity
+              style={styles.retryButton}
+              onPress={retryRegistration}
+            >
+              <MaterialCommunityIcons name="refresh" size={20} color="white" />
+              <Text style={styles.retryButtonText}>Réessayer enregistrement backend</Text>
             </TouchableOpacity>
           )}
 
@@ -262,6 +339,22 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: '600',
     fontSize: 15,
+    marginLeft: 8,
+  },
+  retryButton: {
+    flexDirection: 'row',
+    backgroundColor: '#F97316',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 10,
+    marginBottom: 5,
+  },
+  retryButtonText: {
+    color: 'white',
+    fontWeight: '600',
+    fontSize: 14,
     marginLeft: 8,
   },
   infoBox: {
