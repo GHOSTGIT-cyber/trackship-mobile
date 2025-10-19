@@ -3,6 +3,15 @@
     "version": ">= 5.0.0"
   },
   "build": {
+    "ultradebug": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_DEBUG_MODE": "true"
+      }
+    },
     "preview": {
       "distribution": "internal",
       "android": {

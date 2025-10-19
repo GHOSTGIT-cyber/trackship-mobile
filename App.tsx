@@ -1,14 +1,19 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { SafeAreaView, StyleSheet, View, Text } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Notifications from 'expo-notifications';
 import { registerForPushNotificationsAsync } from './src/services/pushNotifications';
 import MapScreen from './src/screens/MapScreen';
+import DebugScreen from './src/screens/DebugScreen';
+
+// Mode debug activé via variable d'environnement EAS Build
+const DEBUG_MODE = process.env.EXPO_PUBLIC_DEBUG_MODE === 'true';
 
 export default function App() {
   const notificationListener = useRef<Notifications.Subscription | undefined>(undefined);
   const responseListener = useRef<Notifications.Subscription | undefined>(undefined);
+  const [showDebug, setShowDebug] = useState(DEBUG_MODE);
 
   useEffect(() => {
     // DÉSACTIVÉ : Enregistrement token push désactivé au démarrage
@@ -41,20 +46,28 @@ export default function App() {
     <SafeAreaView style={styles.container}>
       <StatusBar style="light" />
 
-      {/* Header stylisé */}
-      <View style={styles.header}>
-        <LinearGradient
-          colors={['#1e3a5f', '#2c5282', '#3b6ba8']}
-          style={styles.headerGradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          <Text style={styles.headerTitle}>🛰️ TrackShip</Text>
-          <Text style={styles.headerSubtitle}>Seine - Surveillance temps réel</Text>
-        </LinearGradient>
-      </View>
+      {showDebug ? (
+        // Mode Debug : Écran de test complet
+        <DebugScreen onGoToMap={() => setShowDebug(false)} />
+      ) : (
+        // Mode Normal : App standard
+        <>
+          {/* Header stylisé */}
+          <View style={styles.header}>
+            <LinearGradient
+              colors={['#1e3a5f', '#2c5282', '#3b6ba8']}
+              style={styles.headerGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <Text style={styles.headerTitle}>🛰️ TrackShip</Text>
+              <Text style={styles.headerSubtitle}>Seine - Surveillance temps réel</Text>
+            </LinearGradient>
+          </View>
 
-      <MapScreen />
+          <MapScreen />
+        </>
+      )}
     </SafeAreaView>
   );
 }
