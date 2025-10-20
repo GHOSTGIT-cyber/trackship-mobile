@@ -6,6 +6,7 @@ import * as Notifications from 'expo-notifications';
 import { registerForPushNotificationsAsync } from './src/services/pushNotifications';
 import MapScreen from './src/screens/MapScreen';
 import DebugScreen from './src/screens/DebugScreen';
+import { ErrorBoundary } from './src/components/ErrorBoundary';
 
 // Mode debug activé via variable d'environnement EAS Build
 // Force DEBUG_MODE à true pour le développement local
@@ -45,32 +46,34 @@ export default function App() {
   }, []);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar style="light" />
+    <ErrorBoundary>
+      <SafeAreaView style={styles.container}>
+        <StatusBar style="light" />
 
-      {showDebug ? (
-        // Mode Debug : Écran de test complet
-        <DebugScreen onGoToMap={() => setShowDebug(false)} />
-      ) : (
-        // Mode Normal : App standard
-        <>
-          {/* Header stylisé */}
-          <View style={styles.header}>
-            <LinearGradient
-              colors={['#1e3a5f', '#2c5282', '#3b6ba8']}
-              style={styles.headerGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <Text style={styles.headerTitle}>🛰️ TrackShip</Text>
-              <Text style={styles.headerSubtitle}>Seine - Surveillance temps réel</Text>
-            </LinearGradient>
-          </View>
+        {showDebug ? (
+          // Mode Debug : Écran de test complet
+          <DebugScreen onGoToMap={() => setShowDebug(false)} />
+        ) : (
+          // Mode Normal : App standard
+          <>
+            {/* Header stylisé */}
+            <View style={styles.header}>
+              <LinearGradient
+                colors={['#1e3a5f', '#2c5282', '#3b6ba8']}
+                style={styles.headerGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <Text style={styles.headerTitle}>🛰️ TrackShip</Text>
+                <Text style={styles.headerSubtitle}>Seine - Surveillance temps réel</Text>
+              </LinearGradient>
+            </View>
 
-          <MapScreen />
-        </>
-      )}
-    </SafeAreaView>
+            <MapScreen />
+          </>
+        )}
+      </SafeAreaView>
+    </ErrorBoundary>
   );
 }
 

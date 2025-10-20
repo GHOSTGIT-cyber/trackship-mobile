@@ -82,6 +82,7 @@ const MapScreen: React.FC = () => {
   const playAlertSound = async () => {
     // Ne jouer le son que si les notifications sont activées
     if (!notificationsEnabled) return;
+
     try {
       // Vérifier que l'app est au premier plan
       if (AppState.currentState !== 'active') return;
@@ -101,10 +102,14 @@ const MapScreen: React.FC = () => {
 
       // Nettoyer après 2 secondes
       setTimeout(() => {
-        sound.unloadAsync().catch(() => {});
+        sound.unloadAsync().catch((err) => {
+          console.error('[MapScreen] Erreur unload son:', err);
+        });
       }, 2000);
     } catch (error) {
+      // Erreur silencieuse - ne pas crasher si le son ne charge pas
       console.error('[MapScreen] Erreur lecture son:', error);
+      // Pas d'alerte à l'utilisateur - le son est optionnel
     }
   };
 
@@ -153,8 +158,16 @@ const MapScreen: React.FC = () => {
 
   // Effect au mount : charge les navires
   useEffect(() => {
-    // Chargement initial
-    loadShips();
+    // Chargement initial avec protection anti-crash
+    const init = async () => {
+      try {
+        await loadShips();
+      } catch (error) {
+        console.error('[MapScreen] Erreur initialisation:', error);
+        // L'erreur est déjà gérée dans loadShips, mais on sécurise ici aussi
+      }
+    };
+    init();
   }, []);
 
   // Effect pour gérer les intervals selon autoRefresh
