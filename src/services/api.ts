@@ -8,20 +8,22 @@ import { ShipsResponse, Ship } from '../types/ship';
  * App attend: latitude/longitude, speed doit être un nombre
  */
 function transformShipData(backendShip: any): Ship {
-  return {
+  const transformed: Ship = {
     trackId: backendShip.trackId,
     name: backendShip.name,
-    latitude: backendShip.lat,       // lat → latitude
-    longitude: backendShip.lon,      // lon → longitude
-    speed: backendShip.speed ?? 0,   // null → 0
-    course: backendShip.course ?? 0, // null → 0
-    length: backendShip.length ?? 0,
-    width: backendShip.width ?? 0,
+    latitude: backendShip.lat,        // lat → latitude
+    longitude: backendShip.lon,       // lon → longitude
+    speed: backendShip.speed !== null && backendShip.speed !== undefined ? Number(backendShip.speed) : 0,
+    course: backendShip.course !== null && backendShip.course !== undefined ? Number(backendShip.course) : 0,
+    length: backendShip.length !== null && backendShip.length !== undefined ? Number(backendShip.length) : 0,
+    width: backendShip.width !== null && backendShip.width !== undefined ? Number(backendShip.width) : 0,
     moving: backendShip.moving,
     distance: backendShip.distance,
     distanceKm: backendShip.distanceKm,
     heading: backendShip.heading,
   };
+
+  return transformed;
 }
 
 /**
