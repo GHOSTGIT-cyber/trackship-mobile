@@ -122,10 +122,10 @@ const DebugScreen: React.FC<DebugScreenProps> = ({ onGoToMap }) => {
 
   const testEuRISAPI = async () => {
     setLoading('euris');
-    addLog('🧪 Test API EuRIS...');
+    addLog('🧪 Test API Ships (Railway)...');
 
     try {
-      addLog(`   URL: ${API_CONFIG.EURIS_API_URL}`);
+      addLog(`   URL: ${API_CONFIG.SHIPS_API_URL}`);
       addLog(`   Base coords: ${BASE_COORDS.lat}, ${BASE_COORDS.lon}`);
 
       const startTime = Date.now();
@@ -147,12 +147,12 @@ const DebugScreen: React.FC<DebugScreenProps> = ({ onGoToMap }) => {
       });
 
       Alert.alert(
-        '✅ API EuRIS OK',
+        '✅ API Ships OK',
         `${ships.length} navires trouvés en ${duration}ms\n\n${shipsWithDistance.join('\n')}`
       );
     } catch (error: any) {
       addLog(`❌ Erreur: ${error.message}`);
-      Alert.alert('❌ Erreur API EuRIS', error.message);
+      Alert.alert('❌ Erreur API Ships', error.message);
     } finally {
       setLoading(null);
     }
@@ -287,7 +287,7 @@ const DebugScreen: React.FC<DebugScreenProps> = ({ onGoToMap }) => {
           >
             <MaterialCommunityIcons name="ferry" size={20} color="white" />
             <Text style={styles.testButtonText}>
-              {loading === 'euris' ? 'Test en cours...' : 'Test API EuRIS'}
+              {loading === 'euris' ? 'Test en cours...' : 'Test API Ships'}
             </Text>
           </TouchableOpacity>
 

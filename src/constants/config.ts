@@ -10,15 +10,16 @@ export const ZONES = {
 };
 
 export const API_CONFIG = {
-  // Backend PHP Hostinger : Proxy EuRIS pour récupérer les navires
-  EURIS_API_URL: 'https://bakabi.fr/trackship/api/euris-proxy.php',
+  // Backend Node.js Railway : Route unifiée pour récupérer les navires
+  SHIPS_API_URL: 'https://api.bakabi.fr/ships',  // Railway (dev ET prod)
 
   // Backend Node.js Railway : Gestion notifications push
   // ⚠️ IMPORTANT: Même en DEV, utiliser Railway car on teste sur device réel
   PUSH_API_URL: 'https://api.bakabi.fr',  // Railway (dev ET prod)
 
   ENDPOINTS: {
-    // Routes backend notifications (Railway)
+    // Routes backend (Railway)
+    SHIPS: '/ships',
     REGISTER_TOKEN: '/register-token',
     UNREGISTER_TOKEN: '/unregister-token',
     HEALTH: '/health',

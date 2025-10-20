@@ -8,7 +8,9 @@ import MapScreen from './src/screens/MapScreen';
 import DebugScreen from './src/screens/DebugScreen';
 
 // Mode debug activé via variable d'environnement EAS Build
-const DEBUG_MODE = process.env.EXPO_PUBLIC_DEBUG_MODE === 'true';
+// Force DEBUG_MODE à true pour le développement local
+// En production (build EAS), utilisera la variable d'environnement
+const DEBUG_MODE = true; // process.env.EXPO_PUBLIC_DEBUG_MODE === 'true';
 
 export default function App() {
   const notificationListener = useRef<Notifications.Subscription | undefined>(undefined);
