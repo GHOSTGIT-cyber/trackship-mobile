@@ -38,6 +38,8 @@ export async function registerForPushNotificationsAsync(): Promise<string | unde
       return undefined;
     }
     console.log('✅ Device réel détecté');
+    console.log(`📱 Device: ${Device.brand || 'Unknown'} ${Device.modelName || 'Unknown'}`);
+    console.log(`🤖 OS: ${Platform.OS} ${Platform.Version}`);
 
     // Vérifier permissions actuelles
     const { status: existingStatus } = await Notifications.getPermissionsAsync();
@@ -77,8 +79,20 @@ export async function registerForPushNotificationsAsync(): Promise<string | unde
 
     // Récupérer token Expo
     console.log('🎫 Récupération token Expo...');
+    console.log('   Ceci peut prendre 5-10 secondes...');
     try {
-      token = (await Notifications.getExpoPushTokenAsync()).data;
+      // Ajouter projectId ET timeout pour éviter blocage
+      const tokenPromise = Notifications.getExpoPushTokenAsync({
+        projectId: 'e3d0f5e2-d59b-4f08-810a-306d14f6783d'  // Depuis app.json
+      });
+
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Timeout 15s dépassé')), 15000)
+      );
+
+      const tokenData = await Promise.race([tokenPromise, timeoutPromise]);
+      token = tokenData.data;
+
       console.log('✅ Token Expo récupéré:', token);
 
       // Sauvegarder localement
@@ -86,6 +100,8 @@ export async function registerForPushNotificationsAsync(): Promise<string | unde
       console.log('💾 Token sauvegardé dans AsyncStorage');
     } catch (tokenError: any) {
       console.error('❌ Erreur récupération token:', tokenError);
+      console.error('   Type:', tokenError.name);
+      console.error('   Message:', tokenError.message);
       Alert.alert('Erreur', `Impossible de récupérer le token push:\n${tokenError.message}`);
       return undefined;
     }

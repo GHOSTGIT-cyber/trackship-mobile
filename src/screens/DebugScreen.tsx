@@ -11,6 +11,7 @@ import {
 import * as Device from 'expo-device';
 import * as Location from 'expo-location';
 import * as Notifications from 'expo-notifications';
+import * as Clipboard from 'expo-clipboard';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { API_CONFIG, BASE_COORDS } from '../constants/config';
@@ -230,6 +231,81 @@ const DebugScreen: React.FC<DebugScreenProps> = ({ onGoToMap }) => {
     Alert.alert('✅ Sauvegardé', 'Logs sauvegardés dans AsyncStorage');
   };
 
+  const testPermissions = async () => {
+    setLoading('permissions');
+    addLog('🔐 Test Permissions...');
+
+    try {
+      // Localisation
+      addLog('   Vérification localisation...');
+      const location = await Location.getForegroundPermissionsAsync();
+      addLog(`   📍 Location: ${location.status}`);
+      addLog(`       granted: ${location.granted}`);
+      addLog(`       canAskAgain: ${location.canAskAgain}`);
+
+      // Notifications
+      addLog('   Vérification notifications...');
+      const notif = await Notifications.getPermissionsAsync();
+      addLog(`   🔔 Notifications: ${notif.status}`);
+      addLog(`       granted: ${notif.granted}`);
+      addLog(`       canAskAgain: ${notif.canAskAgain}`);
+
+      // Demander si pas granted
+      if (notif.status !== 'granted' && notif.canAskAgain) {
+        addLog('   ⚠️ Demande permissions notifications...');
+        const result = await Notifications.requestPermissionsAsync();
+        addLog(`   ✅ Résultat: ${result.status}`);
+        addLog(`       granted: ${result.granted}`);
+
+        // Mettre à jour l'état local
+        setPermissions((prev: any) => ({ ...prev, notifications: result.status }));
+      }
+
+      Alert.alert(
+        'Permissions',
+        `📍 Localisation:\n   Status: ${location.status}\n   Granted: ${location.granted}\n\n🔔 Notifications:\n   Status: ${notif.status}\n   Granted: ${notif.granted}`
+      );
+    } catch (error: any) {
+      addLog(`❌ Erreur: ${error.message}`);
+      Alert.alert('❌ Erreur', error.message);
+    } finally {
+      setLoading(null);
+    }
+  };
+
+  const copyLogsForGhost = async () => {
+    try {
+      // Prendre les 30 dernières lignes
+      const last30 = logs.slice(-30);
+
+      // Ajouter header avec device info
+      const logsText = [
+        '=== LOGS TRACKSHIP DEBUG ===',
+        `Date: ${new Date().toLocaleString('fr-FR')}`,
+        `Device: ${deviceInfo.manufacturer} ${deviceInfo.modelName}`,
+        `OS: ${deviceInfo.osName} ${deviceInfo.osVersion}`,
+        `Type: ${deviceInfo.deviceType}`,
+        '',
+        '=== LOGS (30 dernières lignes) ===',
+        ...last30,
+        '',
+        '=== FIN LOGS ===',
+      ].join('\n');
+
+      // Copier dans presse-papier
+      await Clipboard.setStringAsync(logsText);
+
+      addLog('📋 Logs copiés ! (30 dernières lignes)');
+      Alert.alert(
+        '✅ Logs copiés',
+        'Les 30 dernières lignes de debug ont été copiées.\n\nVous pouvez maintenant les coller dans WhatsApp/SMS pour Ghost.'
+      );
+    } catch (error: any) {
+      addLog(`❌ Erreur copie: ${error.message}`);
+      Alert.alert('❌ Erreur', 'Impossible de copier les logs');
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -307,6 +383,17 @@ const DebugScreen: React.FC<DebugScreenProps> = ({ onGoToMap }) => {
             </Text>
           </TouchableOpacity>
 
+          <TouchableOpacity
+            style={[styles.testButton, loading === 'permissions' && styles.testButtonLoading]}
+            onPress={testPermissions}
+            disabled={!!loading}
+          >
+            <MaterialCommunityIcons name="shield-check" size={20} color="white" />
+            <Text style={styles.testButtonText}>
+              {loading === 'permissions' ? 'Test en cours...' : 'Test Permissions'}
+            </Text>
+          </TouchableOpacity>
+
           <TouchableOpacity style={styles.mapButton} onPress={onGoToMap}>
             <MaterialCommunityIcons name="map" size={20} color="white" />
             <Text style={styles.testButtonText}>🗺️ Aller à la carte</Text>
@@ -320,6 +407,12 @@ const DebugScreen: React.FC<DebugScreenProps> = ({ onGoToMap }) => {
             <View style={styles.logsButtons}>
               <TouchableOpacity style={styles.smallButton} onPress={clearLogs}>
                 <MaterialCommunityIcons name="delete" size={16} color="white" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.smallButton, { backgroundColor: '#10B981' }]}
+                onPress={copyLogsForGhost}
+              >
+                <MaterialCommunityIcons name="content-copy" size={16} color="white" />
               </TouchableOpacity>
               <TouchableOpacity style={styles.smallButton} onPress={exportLogs}>
                 <MaterialCommunityIcons name="content-save" size={16} color="white" />
