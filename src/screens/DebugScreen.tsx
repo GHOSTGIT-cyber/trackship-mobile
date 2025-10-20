@@ -190,28 +190,22 @@ const DebugScreen: React.FC<DebugScreenProps> = ({ onGoToMap }) => {
 
   const testNotifications = async () => {
     setLoading('notifications');
-    addLog('🧪 Test Notifications...');
+    addLog('🧪 Test Notifications Push (Backend)...');
 
     try {
-      // Test notification locale
-      addLog('   Test notification locale...');
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title: '🧪 Test Debug',
-          body: 'Notification locale fonctionne !',
-          sound: true,
-        },
-        trigger: null,
-      });
-      addLog('✅ Notification locale envoyée');
+      // SUPPRIMÉ: Test notification locale (nécessite Firebase sur APK)
+      addLog('⚠️ Test local désactivé (APK sans Firebase)');
+      addLog('   Test enregistrement token backend...');
 
-      // Test enregistrement token
-      addLog('   Test enregistrement token...');
+      // Test enregistrement token backend (FONCTIONNE sans Firebase)
       const token = await registerForPushNotificationsAsync();
 
       if (token) {
         addLog(`✅ Token: ${token.substring(0, 30)}...`);
-        Alert.alert('✅ Notifications OK', `Token enregistré:\n${token.substring(0, 40)}...`);
+        Alert.alert(
+          '✅ Notifications Backend OK',
+          `Token push enregistré avec succès!\n\n${token.substring(0, 40)}...\n\nLes notifications push (navires zone rouge) fonctionneront !`
+        );
       } else {
         addLog('❌ Échec récupération token');
         Alert.alert('❌ Échec', 'Impossible de récupérer le token');
