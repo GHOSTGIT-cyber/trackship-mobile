@@ -94,7 +94,7 @@ const ShipMarkerComponent: React.FC<ShipMarkerProps> = ({
               {moving ? 'En mouvement' : 'À l\'arrêt'}
             </Text>
           </View>
-          <Text style={styles.calloutText}>Vitesse : {ship.speed.toFixed(1)} kn</Text>
+          <Text style={styles.calloutText}>Vitesse : {(ship.speed ?? 0).toFixed(1)} kn</Text>
           <Text style={styles.calloutText}>Distance : {Math.round(distance)} m</Text>
           <Text style={styles.calloutText}>Longueur : {ship.length} m</Text>
         </View>

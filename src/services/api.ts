@@ -3,6 +3,28 @@ import { API_CONFIG } from '../constants/config';
 import { ShipsResponse, Ship } from '../types/ship';
 
 /**
+ * Transforme les données du backend Railway vers le format attendu par l'app
+ * Backend renvoie: lat/lon, speed peut être null
+ * App attend: latitude/longitude, speed doit être un nombre
+ */
+function transformShipData(backendShip: any): Ship {
+  return {
+    trackId: backendShip.trackId,
+    name: backendShip.name,
+    latitude: backendShip.lat,       // lat → latitude
+    longitude: backendShip.lon,      // lon → longitude
+    speed: backendShip.speed ?? 0,   // null → 0
+    course: backendShip.course ?? 0, // null → 0
+    length: backendShip.length ?? 0,
+    width: backendShip.width ?? 0,
+    moving: backendShip.moving,
+    distance: backendShip.distance,
+    distanceKm: backendShip.distanceKm,
+    heading: backendShip.heading,
+  };
+}
+
+/**
  * Récupère la liste des navires depuis le backend Railway (/ships)
  * Le backend gère automatiquement le filtrage par bbox autour de la base
  * @returns Liste des navires
@@ -26,8 +48,12 @@ export async function fetchShips(): Promise<Ship[]> {
 
     // Le backend retourne déjà les ships formatés avec distance calculée
     if (response.data.success && Array.isArray(response.data.ships)) {
-      console.log(`[API] ✅ ${response.data.ships.length} navires retournés`);
-      return response.data.ships;
+      // Transformer les données backend vers le format attendu par l'app
+      const transformedShips = response.data.ships.map(transformShipData);
+
+      console.log(`[API] ✅ ${transformedShips.length} navires transformés`);
+
+      return transformedShips;
     }
 
     console.warn('[API] ⚠️ Format réponse inattendu:', response.data);
