@@ -2,6 +2,7 @@ import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { Platform, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
 import { API_CONFIG } from '../constants/config';
 
 const EXPO_PUSH_TOKEN_KEY = '@expo_push_token';
@@ -81,9 +82,13 @@ export async function registerForPushNotificationsAsync(): Promise<string | unde
     console.log('🎫 Récupération token Expo...');
     console.log('   Ceci peut prendre 5-10 secondes...');
     try {
+      // Récupérer projectId depuis app.json
+      const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+      console.log('   ProjectId:', projectId);
+
       // Ajouter projectId ET timeout pour éviter blocage
       const tokenPromise = Notifications.getExpoPushTokenAsync({
-        projectId: 'e3d0f5e2-d59b-4f08-810a-306d14f6783d'  // Depuis app.json
+        projectId: projectId
       });
 
       const timeoutPromise = new Promise<never>((_, reject) =>

@@ -26,6 +26,7 @@
     "android": {
       "package": "fr.bakabi.trackship",
       "versionCode": 1,
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#3B82F6"
@@ -33,7 +34,8 @@
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
-        "NOTIFICATIONS"
+        "NOTIFICATIONS",
+        "INTERNET"
       ]
     },
     "web": {
@@ -44,7 +46,19 @@
         "expo-notifications",
         {
           "icon": "./assets/notification-icon.png",
-          "color": "#3B82F6"
+          "color": "#3B82F6",
+          "mode": "production",
+          "androidMode": "default"
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 34,
+            "targetSdkVersion": 34,
+            "buildToolsVersion": "34.0.0"
+          }
         }
       ]
     ],
