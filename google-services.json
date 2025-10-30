@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "852304101877",
+    "project_id": "trackship-63457",
+    "storage_bucket": "trackship-63457.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:852304101877:android:6c982d0b0c60583e1be0bc",
+        "android_client_info": {
+          "package_name": "fr.bakabi.trackship"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDuQzzIyNDt7gNPEOMEmaqhPr0RaVTuNK8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
