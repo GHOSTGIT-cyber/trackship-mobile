@@ -27,6 +27,11 @@
       "package": "fr.bakabi.trackship",
       "versionCode": 1,
       "googleServicesFile": "./google-services.json",
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyDuQzziyNDt7gNPEOMEmaqhPr0RaVTuNK8"
+        }
+      },
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#3B82F6"
