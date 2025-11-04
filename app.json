@@ -57,9 +57,10 @@
         }
       ],
       [
-        "react-native-maps",
+        "expo-location",
         {
-          "googleMapsApiKey": "AIzaSyDuQzziyNDt7gNPEOMEmaqhPr0RaVTuNK8"
+          "locationAlwaysAndWhenInUsePermission": "Allow TrackShip to use your location.",
+          "isAndroidBackgroundLocationEnabled": false
         }
       ],
       [
@@ -68,7 +69,8 @@
           "android": {
             "compileSdkVersion": 34,
             "targetSdkVersion": 34,
-            "buildToolsVersion": "34.0.0"
+            "buildToolsVersion": "34.0.0",
+            "usesCleartextTraffic": true
           }
         }
       ]
