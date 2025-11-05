@@ -38,4 +38,4 @@ yarn-error.*
 
 # generated native folders
 /ios
-/android
+# /android - Uncommitted to track native Android modifications for react-native-maps
