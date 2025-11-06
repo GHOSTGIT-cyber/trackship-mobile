@@ -35,5 +35,5 @@ module.exports = ({ config }) => {
     ...config,
   };
 
-  return withGoogleMapsApiKey(baseConfig, 'AIzaSyDuQzziyNDt7gNPEOMEmaqhPr0RaVTuNK8');
+  return withGoogleMapsApiKey(baseConfig, 'AIzaSyBkmZ3wGs6cEhe87QnFVX0ZfR3e4bH6cno');
 };
