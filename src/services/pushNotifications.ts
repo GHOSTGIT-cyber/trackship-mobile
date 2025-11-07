@@ -2,7 +2,7 @@ import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { Platform, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Constants from 'expo-constants';
+import messaging from '@react-native-firebase/messaging';
 import { API_CONFIG } from '../constants/config';
 
 const EXPO_PUSH_TOKEN_KEY = '@expo_push_token';
@@ -19,8 +19,8 @@ Notifications.setNotificationHandler({
 });
 
 /**
- * Demander permission et récupérer token Expo Push
- * @returns Token Expo ou undefined si échec
+ * Demander permission et récupérer token Firebase Cloud Messaging
+ * @returns Token FCM natif ou undefined si échec
  */
 export async function registerForPushNotificationsAsync(): Promise<string | undefined> {
   console.log('\n🔔 === DÉBUT ENREGISTREMENT NOTIFICATIONS ===');
@@ -78,36 +78,44 @@ export async function registerForPushNotificationsAsync(): Promise<string | unde
       console.log('✅ Canal Android configuré');
     }
 
-    // Récupérer token Expo
-    console.log('🎫 Récupération token Expo...');
+    // Récupérer token Firebase Cloud Messaging
+    console.log('🎫 Récupération token FCM (Firebase Cloud Messaging)...');
     console.log('   Ceci peut prendre 5-10 secondes...');
     try {
-      // Récupérer projectId depuis app.json
-      const projectId = Constants.expoConfig?.extra?.eas?.projectId;
-      console.log('   ProjectId:', projectId);
+      // Demander permission FCM (Android 13+)
+      console.log('   Demande autorisation FCM...');
+      const authStatus = await messaging().requestPermission();
+      const enabled =
+        authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+        authStatus === messaging.AuthorizationStatus.PROVISIONAL;
 
-      // Ajouter projectId ET timeout pour éviter blocage
-      const tokenPromise = Notifications.getExpoPushTokenAsync({
-        projectId: projectId
-      });
+      if (!enabled) {
+        console.error('❌ Permission FCM refusée');
+        Alert.alert('Permission refusée', 'Impossible d\'obtenir l\'autorisation Firebase Messaging.');
+        return undefined;
+      }
+      console.log('✅ Permission FCM accordée');
+
+      // Récupérer token FCM natif avec timeout
+      const tokenPromise = messaging().getToken();
 
       const timeoutPromise = new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error('Timeout 15s dépassé')), 15000)
       );
 
-      const tokenData = await Promise.race([tokenPromise, timeoutPromise]);
-      token = tokenData.data;
+      token = await Promise.race([tokenPromise, timeoutPromise]);
 
-      console.log('✅ Token Expo récupéré:', token);
+      console.log('✅ Token FCM récupéré:', token.substring(0, 50) + '...');
+      console.log('   Longueur token:', token.length, 'caractères');
 
       // Sauvegarder localement
       await AsyncStorage.setItem(EXPO_PUSH_TOKEN_KEY, token);
       console.log('💾 Token sauvegardé dans AsyncStorage');
     } catch (tokenError: any) {
-      console.error('❌ Erreur récupération token:', tokenError);
+      console.error('❌ Erreur récupération token FCM:', tokenError);
       console.error('   Type:', tokenError.name);
       console.error('   Message:', tokenError.message);
-      Alert.alert('Erreur', `Impossible de récupérer le token push:\n${tokenError.message}`);
+      Alert.alert('Erreur', `Impossible de récupérer le token FCM:\n${tokenError.message}`);
       return undefined;
     }
 
