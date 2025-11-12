@@ -96,6 +96,14 @@ export async function registerForPushNotificationsAsync(): Promise<string | unde
       console.log('   Type:', devicePushToken.type); // 'fcm' pour Android
       console.log('   Longueur token:', token.length, 'caractères');
 
+      // DIAGNOSTIC DÉTAILLÉ DU TOKEN
+      console.log('🔍 DIAGNOSTIC TOKEN:');
+      console.log('   Token COMPLET:', token);
+      console.log('   Commence par:', token.substring(0, 15));
+      console.log('   Contient ":" ?', token.includes(':'));
+      console.log('   Contient "APA91b" ?', token.includes('APA91b'));
+      console.log('   Format valide FCM ?', token.length > 100 && (token.includes(':') || /^[cdef]/.test(token)));
+
       // Sauvegarder localement
       await AsyncStorage.setItem(EXPO_PUSH_TOKEN_KEY, token);
       console.log('💾 Token sauvegardé dans AsyncStorage');
